@@ -32,7 +32,7 @@
     "@types/nodemailer": "^7.0.11",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.3",
+    "class-validator": "^0.14.4",
     "ejs": "^4.0.1",
     "joi": "^18.0.2",
     "nestjs-pino": "^4.6.0",

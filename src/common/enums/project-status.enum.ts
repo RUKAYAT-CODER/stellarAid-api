@@ -3,6 +3,7 @@ export enum ProjectStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   ACTIVE = 'active',
+  PAUSED = 'paused',
   COMPLETED = 'completed',
   REJECTED = 'rejected',
 }

@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Donation } from './donation.entity';
+import { ProjectHistory } from './project-history.entity';
 import { ProjectCategory } from 'src/common/enums/project-category.enum';
 import { ProjectStatus } from 'src/common/enums/project-status.enum';
 
@@ -72,6 +73,9 @@ export class Project {
 
   @OneToMany(() => Donation, (donation) => donation.project, { cascade: true })
   donations: Donation[];
+
+  @OneToMany(() => ProjectHistory, (history) => history.project, { cascade: true })
+  history: ProjectHistory[];
 
   @CreateDateColumn()
   createdAt: Date;

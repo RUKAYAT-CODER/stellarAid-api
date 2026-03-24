@@ -6,6 +6,7 @@ import { ProjectSortBy } from 'src/common/enums/projects-sortBy.enum';
 import { GetProjectsQueryDto } from 'src/projects/dto/get-projects-query.dto';
 import { Donation } from 'src/projects/entities/donation.entity';
 import { Project } from 'src/projects/entities/project.entity';
+import { ProjectHistory } from 'src/projects/entities/project-history.entity';
 import { ProjectsService } from 'src/projects/providers/projects.service';
 import { Repository } from 'typeorm';
 
@@ -36,6 +37,10 @@ describe('ProjectsService', () => {
     createQueryBuilder: jest.fn(),
   };
 
+  const mockProjectHistoryRepository = {
+    save: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -47,6 +52,10 @@ describe('ProjectsService', () => {
         {
           provide: getRepositoryToken(Donation),
           useValue: mockDonationRepository,
+        },
+        {
+          provide: getRepositoryToken(ProjectHistory),
+          useValue: mockProjectHistoryRepository,
         },
       ],
     }).compile();

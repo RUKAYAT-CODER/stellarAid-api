@@ -2,15 +2,18 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ProjectStatus } from 'src/common/enums/project-status.enum';
 import { ProjectSortBy } from 'src/common/enums/projects-sortBy.enum';
 import { Project } from '../entities/project.entity';
+import { ProjectHistory } from '../entities/project-history.entity';
 import { Donation } from '../entities/donation.entity';
 import { CreateProjectDto } from '../dto/create-project.dto';
 import { GetProjectsQueryDto } from '../dto/get-projects-query.dto';
+import { UpdateProjectStatusDto } from '../dto/update-project-status.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -19,6 +22,8 @@ export class ProjectsService {
     private readonly projectRepository: Repository<Project>,
     @InjectRepository(Donation)
     private readonly donationRepository: Repository<Donation>,
+    @InjectRepository(ProjectHistory)
+    private readonly projectHistoryRepository: Repository<ProjectHistory>,
   ) {}
 
   // create a new project
@@ -220,5 +225,104 @@ export class ProjectsService {
               },
       })),
     };
+  }
+
+  // validate status transitions
+  private validateStatusTransition(
+    currentStatus: ProjectStatus,
+    newStatus: ProjectStatus,
+  ): boolean {
+    const validTransitions: Record<ProjectStatus, ProjectStatus[]> = {
+      [ProjectStatus.DRAFT]: [ProjectStatus.PENDING],
+      [ProjectStatus.PENDING]: [ProjectStatus.APPROVED, ProjectStatus.REJECTED],
+      [ProjectStatus.APPROVED]: [ProjectStatus.ACTIVE, ProjectStatus.REJECTED],
+      [ProjectStatus.ACTIVE]: [ProjectStatus.PAUSED, ProjectStatus.COMPLETED],
+      [ProjectStatus.PAUSED]: [ProjectStatus.ACTIVE, ProjectStatus.COMPLETED],
+      [ProjectStatus.COMPLETED]: [], // Completed projects cannot change status
+      [ProjectStatus.REJECTED]: [], // Rejected projects cannot change status
+    };
+
+    return validTransitions[currentStatus]?.includes(newStatus) || false;
+  }
+
+  // update project status
+  public async updateStatus(
+    id: string,
+    updateStatusDto: UpdateProjectStatusDto,
+    userId: string,
+    userRole: string,
+  ): Promise<Project> {
+    const project = await this.projectRepository.findOne({
+      where: { id },
+      relations: ['creator'],
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    // Check if user is creator or admin
+    const isCreator = project.creatorId === userId;
+    const isAdmin = userRole === 'admin';
+
+    if (!isCreator && !isAdmin) {
+      throw new ForbiddenException('Only creator or admin can change project status');
+    }
+
+    const { status: newStatus, reason } = updateStatusDto;
+
+    // Validate status transition
+    if (!this.validateStatusTransition(project.status, newStatus)) {
+      throw new BadRequestException(
+        `Invalid status transition from ${project.status} to ${newStatus}`,
+      );
+    }
+
+    const previousStatus = project.status;
+
+    // Update project status
+    project.status = newStatus;
+    await this.projectRepository.save(project);
+
+    // Record status change in history
+    await this.projectHistoryRepository.save({
+      previousStatus,
+      newStatus,
+      reason: reason || null,
+      projectId: id,
+      changedBy: userId,
+    });
+
+    return project;
+  }
+
+  // auto-complete projects past deadline
+  public async autocompleteExpiredProjects(): Promise<void> {
+    const expiredProjects = await this.projectRepository
+      .createQueryBuilder('project')
+      .where('project.deadline < :now', { now: new Date() })
+      .andWhere('project.status IN (:...statuses)', {
+        statuses: [ProjectStatus.ACTIVE, ProjectStatus.PAUSED],
+      })
+      .getMany();
+
+    for (const project of expiredProjects) {
+      project.status = ProjectStatus.COMPLETED;
+      await this.projectRepository.save(project);
+
+      // Record auto-completion in history
+      await this.projectHistoryRepository.save({
+        previousStatus: project.status,
+        newStatus: ProjectStatus.COMPLETED,
+        reason: 'Auto-completed due to deadline',
+        projectId: project.id,
+        changedBy: 'system',
+      });
+    }
+  }
+
+  // check if project accepts donations
+  public canAcceptDonations(project: Project): boolean {
+    return project.status === ProjectStatus.ACTIVE;
   }
 }
