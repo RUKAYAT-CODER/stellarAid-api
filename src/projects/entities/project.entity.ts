@@ -17,6 +17,8 @@ import { ProjectStatus } from 'src/common/enums/project-status.enum';
 @Entity('projects')
 @Index('IDX_projects_creator_id', ['creatorId'])
 @Index('IDX_projects_status', ['status'])
+@Index('IDX_projects_search', ['title'])
+@Index('IDX_projects_search', ['description'])
 export class Project {
   @PrimaryGeneratedColumn('uuid')
   id: string;

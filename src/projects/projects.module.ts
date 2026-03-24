@@ -4,11 +4,12 @@ import { Project } from './entities/project.entity';
 import { Donation } from './entities/donation.entity';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './providers/projects.service';
+import { SearchService } from './services/search.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Project, Donation])],
   controllers: [ProjectsController],
-  providers: [ProjectsService],
-  exports: [ProjectsService],
+  providers: [ProjectsService, SearchService],
+  exports: [ProjectsService, SearchService],
 })
 export class ProjectsModule {}

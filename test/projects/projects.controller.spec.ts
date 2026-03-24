@@ -6,7 +6,7 @@ import { GetProjectsQueryDto } from 'src/projects/dto/get-projects-query.dto';
 import { Project } from 'src/projects/entities/project.entity';
 import { ProjectsController } from 'src/projects/projects.controller';
 import { ProjectsService } from 'src/projects/providers/projects.service';
-
+import { SearchService } from 'src/projects/services/search.service';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -16,6 +16,12 @@ describe('ProjectsController', () => {
   const mockProjectsService = {
     findAll: jest.fn(),
     findOnePublic: jest.fn(),
+  };
+
+  // Mock SearchService
+  const mockSearchService = {
+    searchProjects: jest.fn(),
+    getSearchAnalytics: jest.fn(),
   };
 
   // Mock project data
@@ -69,6 +75,10 @@ describe('ProjectsController', () => {
         {
           provide: ProjectsService,
           useValue: mockProjectsService,
+        },
+        {
+          provide: SearchService,
+          useValue: mockSearchService,
         },
       ],
     }).compile();
