@@ -4,7 +4,6 @@ import { MulterModule } from '@nestjs/platform-express';
 import { Project } from './entities/project.entity';
 import { Donation } from './entities/donation.entity';
 import { ProjectImage } from './entities/project-image.entity';
-import { ProjectHistory } from './entities/project-history.entity';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './providers/projects.service';
 import { ImageUploadService } from './services/image-upload.service';
@@ -20,7 +19,6 @@ import { FileUploadService } from '../common/services/file-upload.service';
       },
     }),
   ],
-  imports: [TypeOrmModule.forFeature([Project, Donation, ProjectHistory])],
   controllers: [ProjectsController],
   providers: [ProjectsService, ImageUploadService, FileUploadService],
   exports: [ProjectsService, ImageUploadService],

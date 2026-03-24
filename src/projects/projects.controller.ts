@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Delete,
-  Patch,
   Body,
   HttpCode,
   HttpStatus,
@@ -31,7 +30,6 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { GetProjectsQueryDto } from './dto/get-projects-query.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { DeleteImageDto } from './dto/upload-image.dto';
-import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -110,18 +108,6 @@ export class ProjectsController {
   async uploadImages(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
-  //_____________________ Endpoint to pause a project
-  @Patch(':id/pause')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.CREATOR, UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Pause a project (CREATOR or ADMIN required)' })
-  @ApiOkResponse({ description: 'Project paused successfully' })
-  @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can pause project' })
-  async pauseProject(
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdateProjectStatusDto,
     @Request() req,
   ) {
     const userId = req.user.sub;
@@ -154,64 +140,11 @@ export class ProjectsController {
   async deleteImage(
     @Param('id') id: string,
     @Param('imageId') imageId: string,
-    const project = await this.projectsService.updateStatus(
-      id,
-      { status: 'paused' as any, reason: updateStatusDto.reason },
-      userId,
-      userRole,
-    );
-    return project;
-  }
-
-  //_____________________ Endpoint to resume a project
-  @Patch(':id/resume')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.CREATOR, UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Resume a project (CREATOR or ADMIN required)' })
-  @ApiOkResponse({ description: 'Project resumed successfully' })
-  @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can resume project' })
-  async resumeProject(
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdateProjectStatusDto,
-    @Request() req,
-  ) {
-    const userId = req.user.sub;
-    const userRole = req.user.role;
-    const project = await this.projectsService.updateStatus(
-      id,
-      { status: 'active' as any, reason: updateStatusDto.reason },
-      userId,
-      userRole,
-    );
-    return project;
-  }
-
-  //_____________________ Endpoint to complete a project
-  @Post(':id/complete')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.CREATOR, UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Complete a project (CREATOR or ADMIN required)' })
-  @ApiOkResponse({ description: 'Project completed successfully' })
-  @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can complete project' })
-  async completeProject(
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdateProjectStatusDto,
     @Request() req,
   ) {
     const userId = req.user.sub;
     const userRole = req.user.role;
     await this.imageUploadService.deleteImage(imageId, userId, userRole);
     return { message: 'Image deleted successfully' };
-    const project = await this.projectsService.updateStatus(
-      id,
-      { status: 'completed' as any, reason: updateStatusDto.reason },
-      userId,
-      userRole,
-    );
-    return project;
   }
 }
