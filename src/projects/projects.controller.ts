@@ -35,6 +35,8 @@ import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { SearchProjectsDto } from './dto/search-projects.dto';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import { AdminUpdateProjectStatusDto } from './dto/admin-update-project.dto';
+import { GetProjectDonationsQueryDto } from '../donations/dto/get-project-donations-query.dto';
+import { ProjectDonationsResponseDto } from '../donations/dto/project-donations-response.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -44,6 +46,7 @@ import { ProjectsService } from './providers/projects.service';
 import { ImageUploadService } from './services/image-upload.service';
 import { SearchService } from './services/search.service';
 import { AnalyticsService } from './services/analytics.service';
+import { DonationsService } from '../donations/providers/donations.service';
 
 @ApiTags('projects')
 @ApiBearerAuth()
@@ -54,6 +57,7 @@ export class ProjectsController {
     private readonly imageUploadService: ImageUploadService,
     private readonly searchService: SearchService,
     private readonly analyticsService: AnalyticsService,
+    private readonly donationsService: DonationsService,
   ) {}
 
   //______________________ Endpoint to create a new project (CREATOR role required)
@@ -407,5 +411,33 @@ export class ProjectsController {
         updatedAt: project.updatedAt,
       },
     };
+  }
+
+  //_____________________ Endpoint to get project donations (public)
+  @Get(':id/donations')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all donations for a specific project',
+    description:
+      'Returns paginated donations with donor information (respects anonymity settings)',
+  })
+  @ApiOkResponse({
+    description: 'Donations retrieved successfully',
+    type: ProjectDonationsResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Project not found' })
+  async getProjectDonations(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: GetProjectDonationsQueryDto,
+  ): Promise<ProjectDonationsResponseDto> {
+    // Verify project exists first
+    await this.projectsService.findOnePublic(id);
+
+    return this.donationsService.findDonationsByProject(
+      id,
+      query.page,
+      query.limit,
+    );
   }
 }

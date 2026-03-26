@@ -12,6 +12,11 @@ import { User } from '../../users/entities/user.entity';
 import { CreateDonationDto } from '../dto/create-donation.dto';
 import { UpdateDonationDto } from '../dto/update-donation.dto';
 import { DonationResponseDto } from '../dto/donation-response.dto';
+import {
+  ProjectDonationsResponseDto,
+  ProjectDonationItemDto,
+  ProjectDonationsStatsDto,
+} from '../dto/project-donations-response.dto';
 import { StellarBlockchainService } from '../../common/services/stellar-blockchain.service';
 import { MailService } from '../../mail/mail.service';
 
@@ -290,5 +295,67 @@ export class DonationsService {
     return await this.donationsRepository.count({
       where: { projectId },
     });
+  }
+
+  async findDonationsByProject(
+    projectId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<ProjectDonationsResponseDto> {
+    // Fetch paginated donations with donor info
+    const [donations, total] = await this.donationsRepository.findAndCount({
+      where: { projectId },
+      relations: ['donor'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    // Calculate statistics
+    const stats = await this.calculateProjectDonationStats(projectId);
+
+    // Transform donations to DTOs with anonymization
+    const donationItems: ProjectDonationItemDto[] = donations.map((donation) =>
+      ProjectDonationsResponseDto.fromEntity(donation),
+    );
+
+    return {
+      data: donationItems,
+      total,
+      page,
+      limit,
+      stats,
+    };
+  }
+
+  private async calculateProjectDonationStats(
+    projectId: string,
+  ): Promise<ProjectDonationsStatsDto> {
+    // Get total donations count and amount
+    const totalStats = await this.donationsRepository
+      .createQueryBuilder('donation')
+      .select('COUNT(donation.id)', 'totalDonations')
+      .addSelect('SUM(donation.amount)', 'totalAmount')
+      .where('donation.projectId = :projectId', { projectId })
+      .getRawOne();
+
+    // Get unique donors count (excluding anonymous donations)
+    const uniqueDonorsResult = await this.donationsRepository
+      .createQueryBuilder('donation')
+      .select('COUNT(DISTINCT donation.donorId)', 'uniqueDonors')
+      .where('donation.projectId = :projectId', { projectId })
+      .andWhere('donation.isAnonymous = :isAnonymous', { isAnonymous: false })
+      .getRawOne();
+
+    const totalDonations = parseInt(totalStats.totalDonations, 10) || 0;
+    const totalAmount = parseFloat(totalStats.totalAmount) || 0;
+    const uniqueDonors = parseInt(uniqueDonorsResult.uniqueDonors, 10) || 0;
+
+    return {
+      totalDonations,
+      totalAmount,
+      averageDonation: totalDonations > 0 ? totalAmount / totalDonations : 0,
+      uniqueDonors,
+    };
   }
 }

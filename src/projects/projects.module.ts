@@ -13,6 +13,7 @@ import { FileUploadService } from '../common/services/file-upload.service';
 import { SearchService } from './services/search.service';
 import { AnalyticsService } from './services/analytics.service';
 import { MailModule } from '../mail/mail.module';
+import { DonationsModule } from '../donations/donations.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { MailModule } from '../mail/mail.module';
       },
     }),
     MailModule,
+    DonationsModule,
   ],
   controllers: [ProjectsController],
   providers: [
