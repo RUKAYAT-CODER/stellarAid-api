@@ -10,6 +10,7 @@ import {
   Patch,
   Param,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -25,12 +26,15 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SubmitKYCDto } from './dto/submit-kyc.dto';
 import { UpdateKYCDto } from './dto/update-kyc.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { GetUserDonationsQueryDto } from '../donations/dto/get-user-donations-query.dto';
+import { UserDonationHistoryResponseDto } from '../donations/dto/user-donation-history-response.dto';
 import { Public } from '../common/decorators/public.decorator';
 import type { JwtPayload } from '../common/interfaces/auth.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UserRole } from 'src/common/enums/user-role.enum';
 import { AuthService } from 'src/auth/providers/auth.service';
 import { UsersService } from './providers/users.service';
+import { DonationsService } from '../donations/providers/donations.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -38,6 +42,7 @@ export class UsersController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
+    private readonly donationsService: DonationsService,
   ) {}
 
   @UseGuards(AuthGuard('jwt'))
@@ -132,5 +137,34 @@ export class UsersController {
       throw new ForbiddenException('Admin access required');
     }
     return this.authService.updateKYCStatus(userId, updateKYCDto);
+  }
+
+  //_____________________ Endpoint to get current user's donation history
+  @Get('donations')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Get current user's donation history",
+    description:
+      'Returns paginated list of user donations with project information and summary statistics',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Donation history retrieved successfully',
+    type: UserDonationHistoryResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getUserDonations(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: GetUserDonationsQueryDto,
+  ): Promise<UserDonationHistoryResponseDto> {
+    return this.donationsService.getUserDonationHistory(
+      user.sub,
+      query.page,
+      query.limit,
+      query.startDate,
+      query.endDate,
+    );
   }
 }

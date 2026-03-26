@@ -17,6 +17,11 @@ import {
   ProjectDonationItemDto,
   ProjectDonationsStatsDto,
 } from '../dto/project-donations-response.dto';
+import {
+  UserDonationHistoryResponseDto,
+  UserDonationItemDto,
+  UserDonationSummaryDto,
+} from '../dto/user-donation-history-response.dto';
 import { StellarBlockchainService } from '../../common/services/stellar-blockchain.service';
 import { MailService } from '../../mail/mail.service';
 
@@ -356,6 +361,105 @@ export class DonationsService {
       totalAmount,
       averageDonation: totalDonations > 0 ? totalAmount / totalDonations : 0,
       uniqueDonors,
+    };
+  }
+
+  async getUserDonationHistory(
+    userId: string,
+    page: number = 1,
+    limit: number = 10,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<UserDonationHistoryResponseDto> {
+    // Build query with date filters
+    const queryBuilder = this.donationsRepository
+      .createQueryBuilder('donation')
+      .leftJoinAndSelect('donation.project', 'project')
+      .where('donation.donorId = :userId', { userId })
+      .orderBy('donation.createdAt', 'DESC');
+
+    // Apply date range filters if provided
+    if (startDate) {
+      queryBuilder.andWhere('donation.createdAt >= :startDate', {
+        startDate: new Date(startDate),
+      });
+    }
+
+    if (endDate) {
+      queryBuilder.andWhere('donation.createdAt <= :endDate', {
+        endDate: new Date(endDate),
+      });
+    }
+
+    // Get total count for pagination
+    const total = await queryBuilder.getCount();
+
+    // Get paginated donations
+    const donations = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    // Calculate summary statistics
+    const summary = await this.calculateUserDonationSummary(userId, startDate, endDate);
+
+    // Transform donations to DTOs
+    const donationItems: UserDonationItemDto[] = donations.map((donation) =>
+      UserDonationItemDto.fromEntity(donation),
+    );
+
+    return {
+      data: donationItems,
+      total,
+      page,
+      limit,
+      summary,
+    };
+  }
+
+  private async calculateUserDonationSummary(
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<UserDonationSummaryDto> {
+    const queryBuilder = this.donationsRepository
+      .createQueryBuilder('donation')
+      .select('COUNT(donation.id)', 'totalDonations')
+      .addSelect('SUM(donation.amount)', 'totalAmount')
+      .addSelect('COUNT(DISTINCT donation.projectId)', 'projectsSupported')
+      .addSelect('MIN(donation.createdAt)', 'firstDonationDate')
+      .addSelect('MAX(donation.createdAt)', 'lastDonationDate')
+      .where('donation.donorId = :userId', { userId });
+
+    // Apply date range filters if provided
+    if (startDate) {
+      queryBuilder.andWhere('donation.createdAt >= :startDate', {
+        startDate: new Date(startDate),
+      });
+    }
+
+    if (endDate) {
+      queryBuilder.andWhere('donation.createdAt <= :endDate', {
+        endDate: new Date(endDate),
+      });
+    }
+
+    const result = await queryBuilder.getRawOne();
+
+    const totalDonations = parseInt(result.totalDonations, 10) || 0;
+    const totalAmount = parseFloat(result.totalAmount) || 0;
+
+    return {
+      totalDonations,
+      totalAmount,
+      averageDonation: totalDonations > 0 ? totalAmount / totalDonations : 0,
+      projectsSupported: parseInt(result.projectsSupported, 10) || 0,
+      firstDonationDate: result.firstDonationDate
+        ? new Date(result.firstDonationDate)
+        : null,
+      lastDonationDate: result.lastDonationDate
+        ? new Date(result.lastDonationDate)
+        : null,
     };
   }
 }
