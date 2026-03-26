@@ -107,6 +107,61 @@ export class MailService {
     }
   }
 
+  async sendDonationConfirmationEmail(
+    userEmail: string,
+    firstName: string,
+    donationData: {
+      projectName: string;
+      amount: number;
+      assetType: string;
+      transactionHash: string;
+      projectId: string;
+    },
+  ): Promise<void> {
+    try {
+      const templatePath = path.join(this.templatesPath, 'donation-confirmation.ejs');
+      const template = fs.readFileSync(templatePath, 'utf-8');
+
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+      const templateData = {
+        firstName,
+        appName: this.configService.get<string>('APP_NAME', 'StellarAid'),
+        projectName: donationData.projectName,
+        amount: donationData.amount,
+        assetType: donationData.assetType,
+        transactionHash: donationData.transactionHash,
+        donationDate: new Date().toLocaleDateString(),
+        currentDate: new Date().toLocaleDateString(),
+        currentYear: new Date().getFullYear(),
+        projectViewUrl: `${frontendUrl}/projects/${donationData.projectId}`,
+      };
+
+      const html = await ejs.render(template, templateData);
+
+      const mailOptions = {
+        from: this.configService.get<string>(
+          'MAIL_FROM',
+          'noreply@stellaraid.com',
+        ),
+        to: userEmail,
+        subject: `${this.configService.get<string>('MAIL_SUBJECT_PREFIX', '[StellarAid]')} Your Donation Confirmation`,
+        html,
+      };
+
+      await this.sendMail(mailOptions);
+      this.logger.log(
+        `Donation confirmation email sent successfully to: ${this.maskEmail(userEmail)}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send donation confirmation email to ${this.maskEmail(userEmail)}:`,
+        error.message,
+      );
+      // Don't throw - email failures shouldn't block the donation process
+      // Just log the error for debugging
+    }
+  }
+
   private async sendMail(mailOptions: any): Promise<void> {
     try {
       // Create transporter using environment configuration

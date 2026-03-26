@@ -5,11 +5,17 @@ import { DonationsService } from './providers/donations.service';
 import { Donation } from './entities/donation.entity';
 import { Project } from '../projects/entities/project.entity';
 import { User } from '../users/entities/user.entity';
+import { StellarBlockchainService } from '../common/services/stellar-blockchain.service';
+import { ProjectsService } from '../projects/providers/projects.service';
+import { ProjectHistory } from '../projects/entities/project-history.entity';
+import { MailService } from '../mail/mail.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Donation, Project, User])],
+  imports: [
+    TypeOrmModule.forFeature([Donation, Project, User, ProjectHistory]),
+  ],
   controllers: [DonationsController],
-  providers: [DonationsService],
+  providers: [DonationsService, StellarBlockchainService, ProjectsService, MailService],
   exports: [DonationsService, TypeOrmModule],
 })
 export class DonationsModule {}
