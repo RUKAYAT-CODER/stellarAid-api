@@ -8,7 +8,11 @@ export class DonationResponseDto {
   @ApiProperty({ example: 'project-uuid', description: 'Project ID' })
   projectId: string;
 
-  @ApiProperty({ example: 'donor-uuid', nullable: true, description: 'Donor ID' })
+  @ApiProperty({
+    example: 'donor-uuid',
+    nullable: true,
+    description: 'Donor ID',
+  })
   donorId: string | null;
 
   @ApiProperty({ example: 100, description: 'Donation amount' })
@@ -17,13 +21,20 @@ export class DonationResponseDto {
   @ApiProperty({ example: 'XLM', description: 'Asset type' })
   assetType: string;
 
-  @ApiProperty({ example: 'transaction-hash-xyz', nullable: true, description: 'Transaction hash' })
+  @ApiProperty({
+    example: 'transaction-hash-xyz',
+    nullable: true,
+    description: 'Transaction hash',
+  })
   transactionHash: string | null;
 
   @ApiProperty({ example: false, description: 'Whether donation is anonymous' })
   isAnonymous: boolean;
 
-  @ApiProperty({ example: '2024-01-01T00:00:00Z', description: 'Creation timestamp' })
+  @ApiProperty({
+    example: '2024-01-01T00:00:00Z',
+    description: 'Creation timestamp',
+  })
   createdAt: Date;
 
   static fromEntity(donation: Donation): DonationResponseDto {

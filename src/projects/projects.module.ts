@@ -12,30 +12,38 @@ import { ImageUploadService } from './services/image-upload.service';
 import { FileUploadService } from '../common/services/file-upload.service';
 import { SearchService } from './services/search.service';
 import { AnalyticsService } from './services/analytics.service';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Project, Donation, ProjectHistory, ProjectImage, User]),
+    TypeOrmModule.forFeature([
+      Project,
+      Donation,
+      ProjectHistory,
+      ProjectImage,
+      User,
+    ]),
     MulterModule.register({
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
         files: 10, // Max 10 files per request
       },
     }),
+    MailModule,
   ],
   controllers: [ProjectsController],
   providers: [
-    ProjectsService, 
-    ImageUploadService, 
-    FileUploadService, 
-    SearchService, 
-    AnalyticsService
+    ProjectsService,
+    ImageUploadService,
+    FileUploadService,
+    SearchService,
+    AnalyticsService,
   ],
   exports: [
-    ProjectsService, 
-    ImageUploadService, 
-    SearchService, 
-    AnalyticsService
+    ProjectsService,
+    ImageUploadService,
+    SearchService,
+    AnalyticsService,
   ],
 })
 export class ProjectsModule {}

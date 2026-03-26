@@ -10,7 +10,6 @@ import { ProjectHistory } from 'src/projects/entities/project-history.entity';
 import { ProjectsService } from 'src/projects/providers/projects.service';
 import { Repository } from 'typeorm';
 
-
 describe('ProjectsService', () => {
   let service: ProjectsService;
   let repository: Repository<Project>;

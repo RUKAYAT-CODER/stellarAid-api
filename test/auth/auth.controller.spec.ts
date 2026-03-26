@@ -3,7 +3,6 @@ import { AuthController } from 'src/auth/auth.controller';
 import { AuthService } from 'src/auth/providers/auth.service';
 import { UserRole } from 'src/common/enums/user-role.enum';
 
-
 describe('AuthController', () => {
   let authController: AuthController;
   let authService: AuthService;

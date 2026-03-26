@@ -13,11 +13,11 @@ import {
   Request,
   UseInterceptors,
   UploadedFiles,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
   ApiOkResponse,
   ApiCreatedResponse,
@@ -33,7 +33,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { SearchProjectsDto } from './dto/search-projects.dto';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
-import { DeleteImageDto } from './dto/upload-image.dto';
+import { AdminUpdateProjectStatusDto } from './dto/admin-update-project.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -110,7 +110,9 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Pause a project (CREATOR or ADMIN required)' })
   @ApiOkResponse({ description: 'Project paused successfully' })
   @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can pause project' })
+  @ApiForbiddenResponse({
+    description: 'Only creator or admin can pause project',
+  })
   async pauseProject(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateProjectStatusDto,
@@ -135,7 +137,9 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Resume a project (CREATOR or ADMIN required)' })
   @ApiOkResponse({ description: 'Project resumed successfully' })
   @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can resume project' })
+  @ApiForbiddenResponse({
+    description: 'Only creator or admin can resume project',
+  })
   async resumeProject(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateProjectStatusDto,
@@ -160,7 +164,9 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Complete a project (CREATOR or ADMIN required)' })
   @ApiOkResponse({ description: 'Project completed successfully' })
   @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can complete project' })
+  @ApiForbiddenResponse({
+    description: 'Only creator or admin can complete project',
+  })
   async completeProject(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateProjectStatusDto,
@@ -184,10 +190,14 @@ export class ProjectsController {
   @UseInterceptors(FilesInterceptor('images'))
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload images to project (CREATOR or ADMIN required)' })
+  @ApiOperation({
+    summary: 'Upload images to project (CREATOR or ADMIN required)',
+  })
   @ApiCreatedResponse({ description: 'Images uploaded successfully' })
   @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can upload images' })
+  @ApiForbiddenResponse({
+    description: 'Only creator or admin can upload images',
+  })
   async uploadImages(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
@@ -195,7 +205,12 @@ export class ProjectsController {
   ) {
     const userId = req.user.sub;
     const userRole = req.user.role;
-    const images = await this.imageUploadService.uploadImages(id, files, userId, userRole);
+    const images = await this.imageUploadService.uploadImages(
+      id,
+      files,
+      userId,
+      userRole,
+    );
     return { images };
   }
 
@@ -219,7 +234,9 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Delete project image (CREATOR or ADMIN required)' })
   @ApiOkResponse({ description: 'Image deleted successfully' })
   @ApiNotFoundResponse({ description: 'Image not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can delete images' })
+  @ApiForbiddenResponse({
+    description: 'Only creator or admin can delete images',
+  })
   async deleteImage(
     @Param('id') id: string,
     @Param('imageId') imageId: string,
@@ -235,7 +252,9 @@ export class ProjectsController {
   @Get('search')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Search projects with full-text search and filters' })
+  @ApiOperation({
+    summary: 'Search projects with full-text search and filters',
+  })
   @ApiOkResponse({ description: 'Search results retrieved successfully' })
   async searchProjects(@Query() searchDto: SearchProjectsDto) {
     const result = await this.searchService.searchProjects(searchDto);
@@ -265,10 +284,14 @@ export class ProjectsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CREATOR, UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get project-specific analytics (CREATOR or ADMIN required)' })
+  @ApiOperation({
+    summary: 'Get project-specific analytics (CREATOR or ADMIN required)',
+  })
   @ApiOkResponse({ description: 'Analytics retrieved successfully' })
   @ApiNotFoundResponse({ description: 'Project not found' })
-  @ApiForbiddenResponse({ description: 'Only creator or admin can access analytics' })
+  @ApiForbiddenResponse({
+    description: 'Only creator or admin can access analytics',
+  })
   async getProjectAnalytics(
     @Param('id') id: string,
     @Query() query: AnalyticsQueryDto,
@@ -276,7 +299,12 @@ export class ProjectsController {
   ) {
     const userId = req.user.sub;
     const userRole = req.user.role;
-    return await this.analyticsService.getProjectAnalytics(id, userId, userRole, query);
+    return await this.analyticsService.getProjectAnalytics(
+      id,
+      userId,
+      userRole,
+      query,
+    );
   }
 
   //_____________________ Endpoint for creator analytics
@@ -284,11 +312,77 @@ export class ProjectsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CREATOR)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get creator-specific analytics (CREATOR role required)' })
+  @ApiOperation({
+    summary: 'Get creator-specific analytics (CREATOR role required)',
+  })
   @ApiOkResponse({ description: 'Creator analytics retrieved successfully' })
   @ApiForbiddenResponse({ description: 'Creator role required' })
   async getCreatorAnalytics(@Query() query: AnalyticsQueryDto, @Request() req) {
     const userId = req.user.sub;
     return await this.analyticsService.getCreatorAnalytics(userId, query);
+  }
+
+  //_____________________ ADMIN ENDPOINTS - Approve/Reject Projects
+  @Patch(':id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve a project (ADMIN only)' })
+  @ApiOkResponse({ description: 'Project approved successfully' })
+  @ApiNotFoundResponse({ description: 'Project not found' })
+  @ApiForbiddenResponse({ description: 'Admin access required' })
+  @ApiBadRequestResponse({ description: 'Invalid project status for approval' })
+  async approveProject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDto: AdminUpdateProjectStatusDto,
+    @Request() req,
+  ) {
+    const adminId = req.user.sub;
+    const project = await this.projectsService.approveProject(
+      id,
+      adminId,
+      updateDto,
+    );
+    return {
+      message: 'Project approved successfully',
+      project: {
+        id: project.id,
+        title: project.title,
+        status: project.status,
+        updatedAt: project.updatedAt,
+      },
+    };
+  }
+
+  @Patch(':id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject a project (ADMIN only)' })
+  @ApiOkResponse({ description: 'Project rejected successfully' })
+  @ApiNotFoundResponse({ description: 'Project not found' })
+  @ApiForbiddenResponse({ description: 'Admin access required' })
+  @ApiBadRequestResponse({ description: 'Rejection reason is required' })
+  async rejectProject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDto: AdminUpdateProjectStatusDto,
+    @Request() req,
+  ) {
+    const adminId = req.user.sub;
+    const project = await this.projectsService.rejectProject(
+      id,
+      adminId,
+      updateDto,
+    );
+    return {
+      message: 'Project rejected successfully',
+      project: {
+        id: project.id,
+        title: project.title,
+        status: project.status,
+        rejectionReason: project.rejectionReason,
+        updatedAt: project.updatedAt,
+      },
+    };
   }
 }

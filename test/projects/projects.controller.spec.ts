@@ -190,7 +190,9 @@ describe('ProjectsController', () => {
 
         mockProjectsService.findAll.mockRejectedValue(error);
 
-        await expect(controller.findAll(query)).rejects.toThrow('Service error');
+        await expect(controller.findAll(query)).rejects.toThrow(
+          'Service error',
+        );
       });
     });
   });
@@ -206,7 +208,9 @@ describe('ProjectsController', () => {
         const result = await controller.findOne(projectId);
 
         expect(result).toEqual(expectedProject);
-        expect(mockProjectsService.findOnePublic).toHaveBeenCalledWith(projectId);
+        expect(mockProjectsService.findOnePublic).toHaveBeenCalledWith(
+          projectId,
+        );
       });
     });
 
@@ -217,7 +221,9 @@ describe('ProjectsController', () => {
 
         mockProjectsService.findOnePublic.mockRejectedValue(error);
 
-        await expect(controller.findOne(projectId)).rejects.toThrow('Project not found');
+        await expect(controller.findOne(projectId)).rejects.toThrow(
+          'Project not found',
+        );
       });
 
       it('should handle service errors gracefully', async () => {
@@ -226,7 +232,9 @@ describe('ProjectsController', () => {
 
         mockProjectsService.findOnePublic.mockRejectedValue(error);
 
-        await expect(controller.findOne(projectId)).rejects.toThrow('Service error');
+        await expect(controller.findOne(projectId)).rejects.toThrow(
+          'Service error',
+        );
       });
     });
   });
@@ -256,7 +264,9 @@ describe('ProjectsController', () => {
           offset: 0,
           suggestions: expectedResults.suggestions,
         });
-        expect(mockSearchService.searchProjects).toHaveBeenCalledWith(searchDto);
+        expect(mockSearchService.searchProjects).toHaveBeenCalledWith(
+          searchDto,
+        );
       });
 
       it('should return search results without suggestions', async () => {
@@ -291,7 +301,9 @@ describe('ProjectsController', () => {
 
         mockSearchService.searchProjects.mockRejectedValue(error);
 
-        await expect(controller.searchProjects(searchDto)).rejects.toThrow('Search service error');
+        await expect(controller.searchProjects(searchDto)).rejects.toThrow(
+          'Search service error',
+        );
       });
     });
   });
@@ -314,7 +326,9 @@ describe('ProjectsController', () => {
           averageRaised: 5000,
         };
 
-        mockSearchService.getSearchAnalytics.mockResolvedValue(expectedAnalytics);
+        mockSearchService.getSearchAnalytics.mockResolvedValue(
+          expectedAnalytics,
+        );
 
         const result = await controller.getSearchAnalytics();
 
@@ -329,7 +343,9 @@ describe('ProjectsController', () => {
 
         mockSearchService.getSearchAnalytics.mockRejectedValue(error);
 
-        await expect(controller.getSearchAnalytics()).rejects.toThrow('Analytics service error');
+        await expect(controller.getSearchAnalytics()).rejects.toThrow(
+          'Analytics service error',
+        );
       });
     });
   });
@@ -367,7 +383,9 @@ describe('ProjectsController', () => {
           fundingVelocity: [],
         };
 
-        mockAnalyticsService.getProjectAnalytics.mockResolvedValue(expectedAnalytics);
+        mockAnalyticsService.getProjectAnalytics.mockResolvedValue(
+          expectedAnalytics,
+        );
 
         const result = await controller.getProjectAnalytics(projectId, query, {
           user: { sub: 'user-id', role: 'creator' },
@@ -420,14 +438,19 @@ describe('ProjectsController', () => {
           projectPerformance: [],
         };
 
-        mockAnalyticsService.getCreatorAnalytics.mockResolvedValue(expectedAnalytics);
+        mockAnalyticsService.getCreatorAnalytics.mockResolvedValue(
+          expectedAnalytics,
+        );
 
         const result = await controller.getCreatorAnalytics(query, {
           user: { sub: 'creator-id' },
         } as any);
 
         expect(result).toEqual(expectedAnalytics);
-        expect(mockAnalyticsService.getCreatorAnalytics).toHaveBeenCalledWith('creator-id', query);
+        expect(mockAnalyticsService.getCreatorAnalytics).toHaveBeenCalledWith(
+          'creator-id',
+          query,
+        );
       });
     });
 
@@ -439,7 +462,9 @@ describe('ProjectsController', () => {
         mockAnalyticsService.getCreatorAnalytics.mockRejectedValue(error);
 
         await expect(
-          controller.getCreatorAnalytics(query, { user: { sub: 'creator-id' } } as any),
+          controller.getCreatorAnalytics(query, {
+            user: { sub: 'creator-id' },
+          } as any),
         ).rejects.toThrow('Creator analytics service error');
       });
     });

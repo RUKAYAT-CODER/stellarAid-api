@@ -1,4 +1,10 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 export class CreateDonationsTable1711382400000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -97,26 +103,34 @@ export class CreateDonationsTable1711382400000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('donations');
-    
+
     if (table) {
       // Drop foreign keys
-      const projectForeignKey = table.foreignKeys.find(fk => fk.name === 'FK_donations_project');
+      const projectForeignKey = table.foreignKeys.find(
+        (fk) => fk.name === 'FK_donations_project',
+      );
       if (projectForeignKey) {
         await queryRunner.dropForeignKey('donations', projectForeignKey);
       }
 
-      const donorForeignKey = table.foreignKeys.find(fk => fk.name === 'FK_donations_donor');
+      const donorForeignKey = table.foreignKeys.find(
+        (fk) => fk.name === 'FK_donations_donor',
+      );
       if (donorForeignKey) {
         await queryRunner.dropForeignKey('donations', donorForeignKey);
       }
 
       // Drop indexes
-      const projectIdIndex = table.indices.find(idx => idx.name === 'IDX_donations_project_id');
+      const projectIdIndex = table.indices.find(
+        (idx) => idx.name === 'IDX_donations_project_id',
+      );
       if (projectIdIndex) {
         await queryRunner.dropIndex('donations', projectIdIndex);
       }
 
-      const transactionHashIndex = table.indices.find(idx => idx.name === 'IDX_donations_transaction_hash');
+      const transactionHashIndex = table.indices.find(
+        (idx) => idx.name === 'IDX_donations_transaction_hash',
+      );
       if (transactionHashIndex) {
         await queryRunner.dropIndex('donations', transactionHashIndex);
       }

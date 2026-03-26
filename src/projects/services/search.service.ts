@@ -71,7 +71,10 @@ export class SearchService {
       parameters.status = status;
     } else {
       whereConditions.push('project.status IN (:...defaultStatuses)');
-      parameters.defaultStatuses = [ProjectStatus.APPROVED, ProjectStatus.ACTIVE];
+      parameters.defaultStatuses = [
+        ProjectStatus.APPROVED,
+        ProjectStatus.ACTIVE,
+      ];
     }
 
     // Category filters
@@ -106,13 +109,13 @@ export class SearchService {
     // Full-text search
     if (search && search.trim()) {
       const searchTerm = search.trim();
-      
+
       // Enhanced search with relevance scoring
       whereConditions.push(
-        `(LOWER(project.title) LIKE :search OR LOWER(project.description) LIKE :search)`
+        `(LOWER(project.title) LIKE :search OR LOWER(project.description) LIKE :search)`,
       );
       parameters.search = `%${searchTerm.toLowerCase()}%`;
-      
+
       // Add relevance scoring
       qb.addSelect(
         `
@@ -126,9 +129,9 @@ export class SearchService {
           ELSE 10
         END
         `,
-        'relevance'
+        'relevance',
       );
-      
+
       parameters.exactMatch = `${searchTerm.toLowerCase()}`;
       parameters.startsWith = `${searchTerm.toLowerCase()}%`;
       parameters.contains = `%${searchTerm.toLowerCase()}%`;
@@ -141,8 +144,7 @@ export class SearchService {
 
     // Sorting with relevance for search results
     if (search && search.trim()) {
-      qb.orderBy('relevance', 'DESC')
-        .addOrderBy('project.createdAt', 'DESC');
+      qb.orderBy('relevance', 'DESC').addOrderBy('project.createdAt', 'DESC');
     } else {
       switch (sortBy) {
         case ProjectSortBy.MOST_FUNDED:
@@ -170,9 +172,11 @@ export class SearchService {
     return { data, total, suggestions };
   }
 
-  private async generateSearchSuggestions(searchTerm: string): Promise<string[]> {
+  private async generateSearchSuggestions(
+    searchTerm: string,
+  ): Promise<string[]> {
     const suggestions: string[] = [];
-    
+
     // Get project titles that contain similar terms
     const similarTitles = await this.projectRepository
       .createQueryBuilder('project')
@@ -190,12 +194,12 @@ export class SearchService {
       .limit(5)
       .getRawMany();
 
-    suggestions.push(...similarTitles.map(item => item.title));
+    suggestions.push(...similarTitles.map((item) => item.title));
 
     // Get category suggestions
     const categories = Object.values(ProjectCategory);
-    const matchingCategories = categories.filter(cat =>
-      cat.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchingCategories = categories.filter((cat) =>
+      cat.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     suggestions.push(...matchingCategories);
 
@@ -235,13 +239,14 @@ export class SearchService {
     let totalRaised = 0;
     let count = 0;
 
-    stats.forEach(stat => {
+    stats.forEach((stat) => {
       const category = stat.category;
       const status = stat.status;
-      
-      categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+
+      categoryDistribution[category] =
+        (categoryDistribution[category] || 0) + 1;
       statusDistribution[status] = (statusDistribution[status] || 0) + 1;
-      
+
       if (stat.avgGoal) {
         totalGoal += parseFloat(stat.avgGoal);
         totalRaised += parseFloat(stat.avgRaised);

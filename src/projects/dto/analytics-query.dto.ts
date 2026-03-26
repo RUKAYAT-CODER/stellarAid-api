@@ -4,7 +4,10 @@ import { Transform, Type } from 'class-transformer';
 export class AnalyticsQueryDto {
   @IsDateString()
   @IsOptional()
-  @Transform(({ value }) => value || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Default to 30 days ago
+  @Transform(
+    ({ value }) =>
+      value || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+  ) // Default to 30 days ago
   startDate?: string;
 
   @IsDateString()

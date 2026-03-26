@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Project } from '../entities/project.entity';
@@ -39,26 +44,46 @@ export class AnalyticsService {
     const isAdmin = userRole === 'admin';
 
     if (!isCreator && !isAdmin) {
-      throw new ForbiddenException('Only creator or admin can access project analytics');
+      throw new ForbiddenException(
+        'Only creator or admin can access project analytics',
+      );
     }
 
-    const { startDate, endDate, granularity = 'daily', timezone = 'UTC' } = query;
+    const {
+      startDate,
+      endDate,
+      granularity = 'daily',
+      timezone = 'UTC',
+    } = query;
 
     // Parse dates
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
     // Get total statistics
     const totalStats = await this.getTotalStats(projectId, start, end);
 
     // Get donation trends
-    const donationTrends = await this.getDonationTrends(projectId, start, end, granularity, timezone);
+    const donationTrends = await this.getDonationTrends(
+      projectId,
+      start,
+      end,
+      granularity,
+      timezone,
+    );
 
     // Get top donors (anonymized option)
     const topDonors = await this.getTopDonors(projectId, start, end, isCreator);
 
     // Get funding velocity
-    const fundingVelocity = await this.getFundingVelocity(projectId, start, end, granularity);
+    const fundingVelocity = await this.getFundingVelocity(
+      projectId,
+      start,
+      end,
+      granularity,
+    );
 
     return {
       project: {
@@ -82,7 +107,11 @@ export class AnalyticsService {
     };
   }
 
-  private async getTotalStats(projectId: string, startDate: Date, endDate: Date) {
+  private async getTotalStats(
+    projectId: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
     const stats = await this.donationRepository
       .createQueryBuilder('donation')
       .select('COUNT(donation.id)', 'totalDonations')
@@ -125,14 +154,17 @@ export class AnalyticsService {
     let dateFormat: string;
     switch (granularity) {
       case 'weekly':
-        dateFormat = "DATE_TRUNC('week', donation.createdAt AT TIME ZONE :timezone)";
+        dateFormat =
+          "DATE_TRUNC('week', donation.createdAt AT TIME ZONE :timezone)";
         break;
       case 'monthly':
-        dateFormat = "DATE_TRUNC('month', donation.createdAt AT TIME ZONE :timezone)";
+        dateFormat =
+          "DATE_TRUNC('month', donation.createdAt AT TIME ZONE :timezone)";
         break;
       case 'daily':
       default:
-        dateFormat = "DATE_TRUNC('day', donation.createdAt AT TIME ZONE :timezone)";
+        dateFormat =
+          "DATE_TRUNC('day', donation.createdAt AT TIME ZONE :timezone)";
         break;
     }
 
@@ -157,7 +189,7 @@ export class AnalyticsService {
         uniqueDonors: string;
       }>();
 
-    return trends.map(trend => ({
+    return trends.map((trend) => ({
       period: trend.period.toISOString(),
       donationCount: Number(trend.donationCount),
       totalAmount: Number(trend.totalAmount),
@@ -165,7 +197,12 @@ export class AnalyticsService {
     }));
   }
 
-  private async getTopDonors(projectId: string, startDate: Date, endDate: Date, isCreator: boolean) {
+  private async getTopDonors(
+    projectId: string,
+    startDate: Date,
+    endDate: Date,
+    isCreator: boolean,
+  ) {
     const query = this.donationRepository
       .createQueryBuilder('donation')
       .leftJoin('donation.donor', 'donor')
@@ -197,7 +234,7 @@ export class AnalyticsService {
     }>();
 
     // If not the creator, anonymize donor information
-    return donors.map(donor => ({
+    return donors.map((donor) => ({
       id: isCreator ? donor.donorId : null,
       firstName: isCreator ? donor.firstName : null,
       lastName: isCreator ? donor.lastName : null,
@@ -216,7 +253,7 @@ export class AnalyticsService {
   ) {
     let dateFormat: string;
     let intervalDays: number;
-    
+
     switch (granularity) {
       case 'weekly':
         dateFormat = "DATE_TRUNC('week', createdAt)";
@@ -259,14 +296,17 @@ export class AnalyticsService {
       growthRate: number;
       averagePerDonation: number;
     }> = [];
-    
+
     for (let i = 0; i < velocity.length; i++) {
       const current = velocity[i];
       const previous = velocity[i - 1];
-      
+
       let growthRate = 0;
       if (previous && Number(previous.totalAmount) > 0) {
-        growthRate = ((Number(current.totalAmount) - Number(previous.totalAmount)) / Number(previous.totalAmount)) * 100;
+        growthRate =
+          ((Number(current.totalAmount) - Number(previous.totalAmount)) /
+            Number(previous.totalAmount)) *
+          100;
       }
 
       velocityData.push({
@@ -274,7 +314,10 @@ export class AnalyticsService {
         totalAmount: Number(current.totalAmount),
         donationCount: Number(current.donationCount),
         growthRate: Number(growthRate.toFixed(2)),
-        averagePerDonation: Number(current.donationCount) > 0 ? Number(current.totalAmount) / Number(current.donationCount) : 0,
+        averagePerDonation:
+          Number(current.donationCount) > 0
+            ? Number(current.totalAmount) / Number(current.donationCount)
+            : 0,
       });
     }
 
@@ -283,17 +326,28 @@ export class AnalyticsService {
 
   async getCreatorAnalytics(userId: string, query: AnalyticsQueryDto) {
     const { startDate, endDate, granularity = 'daily' } = query;
-    
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = endDate ? new Date(endDate) : new Date();
 
     // Get all projects for this creator
     const projects = await this.projectRepository.find({
       where: { creatorId: userId },
-      select: ['id', 'title', 'status', 'goalAmount', 'fundsRaised', 'progress', 'deadline', 'createdAt'],
+      select: [
+        'id',
+        'title',
+        'status',
+        'goalAmount',
+        'fundsRaised',
+        'progress',
+        'deadline',
+        'createdAt',
+      ],
     });
 
-    const projectIds = projects.map(p => p.id);
+    const projectIds = projects.map((p) => p.id);
 
     // Get overall statistics
     const overallStats = await this.donationRepository
@@ -362,7 +416,9 @@ export class AnalyticsService {
         activeProjects: Number(overallStats?.activeProjects ?? 0),
         totalProjects: projects.length,
       },
-      projectPerformance: projectPerformance.sort((a, b) => b.periodRaised - a.periodRaised),
+      projectPerformance: projectPerformance.sort(
+        (a, b) => b.periodRaised - a.periodRaised,
+      ),
     };
   }
 }

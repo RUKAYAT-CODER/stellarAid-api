@@ -80,7 +80,9 @@ export class Project {
   @OneToMany(() => Donation, (donation) => donation.project, { cascade: true })
   donations: Donation[];
 
-  @OneToMany(() => ProjectHistory, (history) => history.project, { cascade: true })
+  @OneToMany(() => ProjectHistory, (history) => history.project, {
+    cascade: true,
+  })
   history: ProjectHistory[];
 
   @CreateDateColumn()

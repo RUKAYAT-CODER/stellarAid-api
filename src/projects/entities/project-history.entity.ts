@@ -24,6 +24,12 @@ export class ProjectHistory {
   @Column({ nullable: true, type: 'text' })
   reason: string | null;
 
+  @Column({ nullable: true, type: 'text' })
+  adminNotes: string | null;
+
+  @Column({ default: false })
+  isAdminAction: boolean;
+
   @Column()
   projectId: string;
 

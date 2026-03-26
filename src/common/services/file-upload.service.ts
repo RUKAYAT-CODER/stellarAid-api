@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
@@ -15,12 +19,17 @@ export class FileUploadService {
       region: this.configService.get<string>('AWS_REGION', 'us-east-1'),
       credentials: {
         accessKeyId: this.configService.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
+        secretAccessKey: this.configService.getOrThrow<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ),
       },
     });
   }
 
-  async uploadFile(file: Express.Multer.File, projectId: string): Promise<string> {
+  async uploadFile(
+    file: Express.Multer.File,
+    projectId: string,
+  ): Promise<string> {
     const fileExtension = file.originalname.split('.').pop();
     const fileName = `${randomUUID()}.${fileExtension}`;
     const key = `projects/${projectId}/images/${fileName}`;
@@ -37,7 +46,7 @@ export class FileUploadService {
       );
 
       const publicUrl = `https://${this.configService.getOrThrow<string>('AWS_S3_BUCKET')}.s3.${this.configService.get<string>('AWS_REGION', 'us-east-1')}.amazonaws.com/${key}`;
-      
+
       this.logger.log(`File uploaded successfully: ${fileName}`);
       return publicUrl;
     } catch (error) {
