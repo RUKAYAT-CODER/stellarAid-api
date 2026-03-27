@@ -12,6 +12,7 @@ import { Project } from '../../projects/entities/project.entity';
 import { ProjectStatus } from '../../common/enums/project-status.enum';
 import { WithdrawalStatus } from '../../common/enums/withdrawal-status.enum';
 import { CreateWithdrawalDto } from '../dto/create-withdrawal.dto';
+import { GetWithdrawalsDto } from '../dto/get-withdrawals.dto';
 import { MailService } from '../../mail/mail.service';
 
 @Injectable()
@@ -198,5 +199,46 @@ export class WithdrawalsService {
     }
 
     return withdrawal;
+  }
+
+  async getCreatorWithdrawalHistory(
+    userId: string,
+    query: GetWithdrawalsDto,
+  ): Promise<{ withdrawals: Withdrawal[]; totalWithdrawn: number }> {
+    const { startDate, endDate } = query;
+
+    const queryBuilder = this.withdrawalsRepository
+      .createQueryBuilder('withdrawal')
+      .leftJoinAndSelect('withdrawal.project', 'project')
+      .where('project.creatorId = :userId', { userId });
+
+    if (startDate) {
+      queryBuilder.andWhere('withdrawal.createdAt >= :startDate', {
+        startDate: new Date(startDate),
+      });
+    }
+
+    if (endDate) {
+      queryBuilder.andWhere('withdrawal.createdAt <= :endDate', {
+        endDate: new Date(endDate),
+      });
+    }
+
+    queryBuilder.orderBy('withdrawal.createdAt', 'DESC');
+
+    const withdrawals = await queryBuilder.getMany();
+
+    // Calculate total withdrawn from the filtered list (only approved and paid ones)
+    const totalWithdrawn = withdrawals.reduce((sum, w) => {
+      if (
+        w.status === WithdrawalStatus.APPROVED ||
+        w.status === WithdrawalStatus.PAID
+      ) {
+        return sum + Number(w.amount);
+      }
+      return sum;
+    }, 0);
+
+    return { withdrawals, totalWithdrawn };
   }
 }

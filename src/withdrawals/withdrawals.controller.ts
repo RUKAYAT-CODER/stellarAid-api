@@ -6,6 +6,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -15,7 +16,9 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { WithdrawalsService } from './providers/withdrawals.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
+import { GetWithdrawalsDto } from './dto/get-withdrawals.dto';
 import { WithdrawalResponseDto } from './dto/withdrawal-response.dto';
+import { WithdrawalHistoryResponseDto } from './dto/withdrawal-history-response.dto';
 
 @Controller('withdrawals')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -89,6 +92,34 @@ export class WithdrawalsController {
       rejectionReason: withdrawal.rejectionReason,
       createdAt: withdrawal.createdAt,
       updatedAt: withdrawal.updatedAt,
+    };
+  }
+
+  @Get()
+  @Roles(UserRole.CREATOR)
+  async getWithdrawalHistory(
+    @Query() query: GetWithdrawalsDto,
+    @Request() req,
+  ): Promise<WithdrawalHistoryResponseDto> {
+    const { withdrawals, totalWithdrawn } =
+      await this.withdrawalsService.getCreatorWithdrawalHistory(
+        req.user.sub,
+        query,
+      );
+
+    return {
+      withdrawals: withdrawals.map((withdrawal) => ({
+        id: withdrawal.id,
+        projectId: withdrawal.projectId,
+        projectTitle: withdrawal.project?.title,
+        amount: Number(withdrawal.amount),
+        status: withdrawal.status,
+        transactionHash: withdrawal.transactionHash,
+        rejectionReason: withdrawal.rejectionReason,
+        createdAt: withdrawal.createdAt,
+        updatedAt: withdrawal.updatedAt,
+      })),
+      totalWithdrawn,
     };
   }
 }
