@@ -1,4 +1,12 @@
-import { IsUUID, IsNumber, IsNotEmpty, IsPositive, Max } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  IsNotEmpty,
+  IsPositive,
+  Max,
+  IsOptional,
+  IsIn,
+} from 'class-validator';
 
 export class CreateWithdrawalDto {
   @IsUUID()
@@ -9,4 +17,8 @@ export class CreateWithdrawalDto {
   @IsPositive()
   @Max(999999999.9999999)
   amount: number;
+
+  @IsOptional()
+  @IsIn(['XLM', 'USDC', 'NGNT'])
+  assetType?: string;
 }

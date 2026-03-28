@@ -8,6 +8,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Patch,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -38,6 +39,7 @@ export class WithdrawalsController {
       id: withdrawal.id,
       projectId: withdrawal.projectId,
       amount: withdrawal.amount,
+      assetType: withdrawal.assetType,
       status: withdrawal.status,
       transactionHash: withdrawal.transactionHash,
       rejectionReason: withdrawal.rejectionReason,
@@ -61,6 +63,7 @@ export class WithdrawalsController {
       id: withdrawal.id,
       projectId: withdrawal.projectId,
       amount: withdrawal.amount,
+      assetType: withdrawal.assetType,
       status: withdrawal.status,
       transactionHash: withdrawal.transactionHash,
       rejectionReason: withdrawal.rejectionReason,
@@ -84,6 +87,28 @@ export class WithdrawalsController {
       id: withdrawal.id,
       projectId: withdrawal.projectId,
       amount: withdrawal.amount,
+      assetType: withdrawal.assetType,
+      status: withdrawal.status,
+      transactionHash: withdrawal.transactionHash,
+      rejectionReason: withdrawal.rejectionReason,
+      createdAt: withdrawal.createdAt,
+      updatedAt: withdrawal.updatedAt,
+    };
+  }
+
+  @Patch(':id/pay')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async processWithdrawalPayout(
+    @Param('id') id: string,
+  ): Promise<WithdrawalResponseDto> {
+    const withdrawal = await this.withdrawalsService.processWithdrawalPayout(id);
+
+    return {
+      id: withdrawal.id,
+      projectId: withdrawal.projectId,
+      amount: withdrawal.amount,
+      assetType: withdrawal.assetType,
       status: withdrawal.status,
       transactionHash: withdrawal.transactionHash,
       rejectionReason: withdrawal.rejectionReason,

@@ -31,6 +31,9 @@ export class Withdrawal {
   @Column({ type: 'decimal', precision: 18, scale: 7 })
   amount: number;
 
+  @Column({ default: 'XLM' })
+  assetType: string;
+
   @Column({
     type: 'enum',
     enum: WithdrawalStatus,
