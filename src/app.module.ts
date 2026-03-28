@@ -13,6 +13,7 @@ import { MailModule } from './mail/mail.module';
 import { DonationsModule } from './donations/donations.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { AdminModule } from './admin/admin.module';
+import { JobsModule } from './jobs/jobs.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AdminModule } from './admin/admin.module';
     DonationsModule,
     WithdrawalsModule,
     AdminModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

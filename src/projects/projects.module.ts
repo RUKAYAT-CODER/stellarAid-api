@@ -12,6 +12,7 @@ import { ImageUploadService } from './services/image-upload.service';
 import { FileUploadService } from '../common/services/file-upload.service';
 import { SearchService } from './services/search.service';
 import { AnalyticsService } from './services/analytics.service';
+import { ProjectsGateway } from './gateways/projects.gateway';
 import { MailModule } from '../mail/mail.module';
 import { DonationsModule } from '../donations/donations.module';
 
@@ -40,12 +41,14 @@ import { DonationsModule } from '../donations/donations.module';
     FileUploadService,
     SearchService,
     AnalyticsService,
+    ProjectsGateway,
   ],
   exports: [
     ProjectsService,
     ImageUploadService,
     SearchService,
     AnalyticsService,
+    ProjectsGateway,
   ],
 })
 export class ProjectsModule {}

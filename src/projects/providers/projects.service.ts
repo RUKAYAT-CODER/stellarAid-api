@@ -4,11 +4,14 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ProjectStatus } from 'src/common/enums/project-status.enum';
 import { ProjectSortBy } from 'src/common/enums/projects-sortBy.enum';
+import { ProjectsGateway } from '../gateways/projects.gateway';
 import { Project } from '../entities/project.entity';
 import { ProjectHistory } from '../entities/project-history.entity';
 import { Donation } from '../../donations/entities/donation.entity';
@@ -38,6 +41,8 @@ export class ProjectsService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly mailService: MailService,
+    @Inject(forwardRef(() => ProjectsGateway))
+    private readonly projectsGateway: ProjectsGateway,
   ) {}
 
   // create a new project
@@ -615,5 +620,60 @@ export class ProjectsService {
     this.logger.log(
       `Rejection notification sent to creator of project ${project.id}`,
     );
+  }
+
+  // update all active project funding totals
+  public async updateProjectFundingTotals(): Promise<void> {
+    const activeProjects = await this.projectRepository.find({
+      where: [
+        { status: ProjectStatus.ACTIVE },
+        { status: ProjectStatus.APPROVED },
+      ],
+    });
+
+    for (const project of activeProjects) {
+      const stats = await this.donationRepository
+        .createQueryBuilder('donation')
+        .select('COALESCE(SUM(donation.amount), 0)', 'totalRaised')
+        .addSelect('COUNT(donation.id)', 'donationCount')
+        .where('donation.projectId = :projectId', { projectId: project.id })
+        .andWhere('donation.verified = :verified', { verified: true })
+        .getRawOne();
+
+      const totalRaised = Number(stats.totalRaised);
+      const donationCount = Number(stats.donationCount);
+
+      // Check if project status should be completed if goal reached or deadline passed
+      let status = project.status;
+      const progress =
+        project.goalAmount > 0
+          ? Math.min((totalRaised / project.goalAmount) * 100, 100)
+          : 0;
+
+      if (totalRaised >= project.goalAmount && project.goalAmount > 0) {
+        // Goal reached, but typically we keep it active until creator completes it or deadline passes
+        // Some platforms auto-complete, let's keep it active but update totals
+      }
+
+      if (project.deadline && project.deadline < new Date()) {
+        status = ProjectStatus.COMPLETED;
+      }
+
+      // Update project record
+      await this.projectRepository.update(project.id, {
+        fundsRaised: totalRaised,
+        donationCount: donationCount,
+        progress: Number(progress.toFixed(2)),
+        status,
+      });
+
+      // Emit real-time update
+      this.projectsGateway.emitProjectUpdate(project.id, {
+        fundsRaised: totalRaised,
+        donationCount: donationCount,
+        progress: Number(progress.toFixed(2)),
+        status,
+      });
+    }
   }
 }
