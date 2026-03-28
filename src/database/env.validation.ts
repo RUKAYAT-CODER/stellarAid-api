@@ -17,4 +17,7 @@ export const validationSchema = Joi.object({
     .default('development'),
 
   ENABLE_SWAGGER: Joi.boolean().default(false),
+
+  /** Percent of each donation counted as platform fee (0–100). Optional; defaults to 0. */
+  PLATFORM_FEE_PERCENT: Joi.number().min(0).max(100).optional(),
 });

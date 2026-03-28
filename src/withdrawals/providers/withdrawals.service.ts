@@ -6,13 +6,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Withdrawal } from '../entities/withdrawal.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { ProjectStatus } from '../../common/enums/project-status.enum';
 import { WithdrawalStatus } from '../../common/enums/withdrawal-status.enum';
 import { CreateWithdrawalDto } from '../dto/create-withdrawal.dto';
 import { GetWithdrawalsDto } from '../dto/get-withdrawals.dto';
+import { AdminGetWithdrawalsQueryDto } from '../dto/admin-get-withdrawals-query.dto';
 import { MailService } from '../../mail/mail.service';
 import { StellarPayoutService } from './stellar-payout.service';
 
@@ -252,6 +253,110 @@ export class WithdrawalsService {
     );
 
     return saved;
+  }
+
+  async findAllForAdmin(query: AdminGetWithdrawalsQueryDto): Promise<{
+    data: ReturnType<WithdrawalsService['toAdminWithdrawalListItem']>[];
+    total: number;
+    statistics: { pending: number; approved: number; rejected: number };
+  }> {
+    const limit = query.limit ?? 10;
+    const offset = query.offset ?? 0;
+
+    const listQb = this.withdrawalsRepository
+      .createQueryBuilder('withdrawal')
+      .leftJoinAndSelect('withdrawal.project', 'project')
+      .leftJoinAndSelect('project.creator', 'creator');
+    this.applyAdminWithdrawalFilters(listQb, query, true);
+    listQb
+      .orderBy('withdrawal.createdAt', 'DESC')
+      .skip(offset)
+      .take(limit);
+
+    const [rows, total] = await listQb.getManyAndCount();
+
+    const statsQb =
+      this.withdrawalsRepository.createQueryBuilder('withdrawal');
+    this.applyAdminWithdrawalFilters(statsQb, query, false);
+    const statRows = await statsQb
+      .select('withdrawal.status', 'status')
+      .addSelect('COUNT(*)', 'cnt')
+      .groupBy('withdrawal.status')
+      .getRawMany<{ status: WithdrawalStatus; cnt: string }>();
+
+    const statistics = {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+    };
+    for (const row of statRows) {
+      const c = parseInt(row.cnt, 10);
+      if (row.status === WithdrawalStatus.PENDING) {
+        statistics.pending = c;
+      } else if (row.status === WithdrawalStatus.APPROVED) {
+        statistics.approved = c;
+      } else if (row.status === WithdrawalStatus.REJECTED) {
+        statistics.rejected = c;
+      }
+    }
+
+    const data = rows.map((w) => this.toAdminWithdrawalListItem(w));
+
+    return { data, total, statistics };
+  }
+
+  private applyAdminWithdrawalFilters(
+    qb: SelectQueryBuilder<Withdrawal>,
+    query: AdminGetWithdrawalsQueryDto,
+    applyStatusFilter: boolean,
+  ): void {
+    if (query.projectId) {
+      qb.andWhere('withdrawal.projectId = :projectId', {
+        projectId: query.projectId,
+      });
+    }
+    if (query.startDate) {
+      qb.andWhere('withdrawal.createdAt >= :startDate', {
+        startDate: new Date(query.startDate),
+      });
+    }
+    if (query.endDate) {
+      qb.andWhere('withdrawal.createdAt <= :endDate', {
+        endDate: new Date(query.endDate),
+      });
+    }
+    if (applyStatusFilter && query.status) {
+      qb.andWhere('withdrawal.status = :status', { status: query.status });
+    }
+  }
+
+  private toAdminWithdrawalListItem(withdrawal: Withdrawal) {
+    const project = withdrawal.project;
+    const creator = project.creator;
+    return {
+      id: withdrawal.id,
+      projectId: withdrawal.projectId,
+      amount: Number(withdrawal.amount),
+      assetType: withdrawal.assetType,
+      status: withdrawal.status,
+      transactionHash: withdrawal.transactionHash,
+      rejectionReason: withdrawal.rejectionReason,
+      createdAt: withdrawal.createdAt,
+      updatedAt: withdrawal.updatedAt,
+      project: {
+        id: project.id,
+        title: project.title,
+        status: project.status,
+      },
+      creator: {
+        id: creator.id,
+        firstName: creator.firstName,
+        lastName: creator.lastName,
+        email: creator.email,
+      },
+    };
+  }
+
   async getCreatorWithdrawalHistory(
     userId: string,
     query: GetWithdrawalsDto,

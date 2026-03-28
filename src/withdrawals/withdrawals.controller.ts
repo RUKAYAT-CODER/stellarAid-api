@@ -138,6 +138,7 @@ export class WithdrawalsController {
         projectId: withdrawal.projectId,
         projectTitle: withdrawal.project?.title,
         amount: Number(withdrawal.amount),
+        assetType: withdrawal.assetType,
         status: withdrawal.status,
         transactionHash: withdrawal.transactionHash,
         rejectionReason: withdrawal.rejectionReason,

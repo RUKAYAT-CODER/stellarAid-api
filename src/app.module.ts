@@ -11,6 +11,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { MailModule } from './mail/mail.module';
 import { DonationsModule } from './donations/donations.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { WithdrawalsModule } from './withdrawals/withdrawals.module';
     ProjectsModule,
     DonationsModule,
     WithdrawalsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
