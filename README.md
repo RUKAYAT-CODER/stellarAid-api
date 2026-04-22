@@ -1,11 +1,40 @@
 # 🌟 StellarAid-api
+
 StellarAid Backend is the server-side API powering the StellarAid crowdfunding platform — a blockchain‑enabled system built on the Stellar network to support transparent, secure, and efficient fundraising for social impact initiatives.
 
+## 🚀 Quick Start
 
-# Folder structure 
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- PostgreSQL (v14 or higher)
+
+### Installation
+
 ```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/stellaraid-api.git
+cd stellaraid-api
+
+# Install dependencies
+npm install
+
+# Setup environment variables
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Start development server
+npm run start:dev
+```
+
+The application will be running at `http://localhost:3000`
+
+## 📁 Project Structure
+
+```
 /src
-  /modules
+  /modules          # Feature modules (auth, users, projects, etc.)
     /auth
     /users
     /projects
@@ -13,10 +42,42 @@ StellarAid Backend is the server-side API powering the StellarAid crowdfunding p
     /wallet
     /admin
     /notifications
-  /common
-  /database
-  /config
+  /common           # Shared utilities, filters, interceptors
+    /filters        # Exception filters
+    /interceptors   # Request/response interceptors
+    /middleware     # Custom middleware
+    /services       # Shared services (logger, etc.)
+  /database         # Database configuration and Prisma setup
+  /config           # Application configuration
 ```
+
+## 🛠️ Available Scripts
+
+```bash
+# Development
+npm run start:dev        # Start with hot-reload
+npm run start:debug      # Start with debug mode
+
+# Production
+npm run build            # Build the application
+npm run start:prod       # Start production server
+
+# Testing
+npm run test             # Run unit tests
+npm run test:watch       # Run tests in watch mode
+npm run test:cov         # Run tests with coverage
+npm run test:e2e         # Run e2e tests
+
+# Database
+npx prisma generate      # Generate Prisma Client
+npx prisma migrate       # Run database migrations
+npx prisma studio        # Open Prisma Studio
+
+# Code Quality
+npm run lint             # Lint code with ESLint
+npm run format           # Format code with Prettier
+```
+
 ## 📌 Features
 
 ### 🎯 For Donors
