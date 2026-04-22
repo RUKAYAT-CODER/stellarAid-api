@@ -51,6 +51,7 @@ logs
 
 # Prisma
 prisma/migrations/
+generated/
 
 # Optional npm cache directory
 .npmrc
@@ -71,3 +72,5 @@ prisma/migrations/
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
+
+/generated/prisma
