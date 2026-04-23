@@ -1,4 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -7,6 +8,7 @@ import { RequestLoggerMiddleware } from './common/middleware';
 import { winstonConfig } from './config/winston.config';
 import { AppConfigurationModule } from './config/app-configuration.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth';
 
 @Module({
   imports: [
@@ -16,7 +18,10 @@ import { AuthModule } from './modules/auth/auth.module';
     WinstonModule.forRoot(winstonConfig),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, {
+    provide: APP_GUARD,
+    useClass: JwtAuthGuard,
+  }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

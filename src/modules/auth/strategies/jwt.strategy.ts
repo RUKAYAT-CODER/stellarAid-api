@@ -8,7 +8,7 @@ import { PrismaService } from '../../../database/prisma.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private configService: AppConfigService,
+    configService: AppConfigService,
     private prisma: PrismaService,
   ) {
     super({
