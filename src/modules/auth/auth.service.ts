@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma.service';
 import { AppConfigService } from '../../config/app-config.service';
 import { RegisterDto, LoginDto, JwtPayload, JwtTokens } from './index';
+import { UserRole } from '../../../generated/prisma';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -39,6 +40,7 @@ export class AuthService {
         password: hashedPassword,
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
+        role: registerDto.role as UserRole,
         status: 'PENDING',
       },
     });
