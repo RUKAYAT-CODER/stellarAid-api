@@ -16,4 +16,22 @@ export class EmailService {
   async sendKycStatusEmail(email: string, status: string): Promise<void> {
     this.logger.log(`KYC status update email (${status}) would be sent to ${email}`);
   }
+
+  async sendProjectApprovalEmail(creatorEmail: string, projectTitle: string, remarks?: string): Promise<void> {
+    this.logger.log(
+      `Project approval email would be sent to ${creatorEmail} for project: ${projectTitle}. Remarks: ${remarks || 'None'}`,
+    );
+    // TODO: Implement actual email sending with project details and approval confirmation
+  }
+
+  async sendProjectRejectionEmail(
+    creatorEmail: string,
+    projectTitle: string,
+    rejectionReason: string,
+  ): Promise<void> {
+    this.logger.log(
+      `Project rejection email would be sent to ${creatorEmail} for project: ${projectTitle}. Reason: ${rejectionReason}`,
+    );
+    // TODO: Implement actual email sending with rejection reason and appeal instructions
+  }
 }

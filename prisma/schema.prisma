@@ -53,6 +53,17 @@ enum ProjectCategory {
   OTHER
 }
 
+enum AuditActionType {
+  PROJECT_APPROVED
+  PROJECT_REJECTED
+  PROJECT_PAUSED
+  PROJECT_RESUMED
+  PROJECT_COMPLETED
+  USER_ROLE_UPDATED
+  USER_KYC_STATUS_UPDATED
+  USER_DELETED
+}
+
 // ── Models ────────────────────────────────────────────────────────────────────
 
 model User {
@@ -80,6 +91,7 @@ model User {
   refreshTokens    RefreshToken[]
   emailTokens      EmailToken[]
   projects         Project[]
+  auditLogs        AuditLog[]
 
   @@map("users")
   @@index([role])
@@ -142,7 +154,26 @@ model Project {
 }
 
 model ProjectStatusHistory {
-  id        String        @id @default(uuid())
+ 
+
+model AuditLog {
+  id        String            @id @default(uuid())
+  action    AuditActionType
+  adminId   String
+  admin     User              @relation(fields: [adminId], references: [id])
+  projectId String?
+  userId    String?
+  details   String? // JSON serialized additional details
+  remarks   String?
+  createdAt DateTime          @default(now())
+
+  @@map("audit_logs")
+  @@index([adminId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+} id        String        @id @default(uuid())
   projectId String
   project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   oldStatus ProjectStatus

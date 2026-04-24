@@ -4,11 +4,15 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { PauseProjectDto } from './dto/pause-project.dto';
 import { ResumeProjectDto } from './dto/resume-project.dto';
 import { CompleteProjectDto } from './dto/complete-project.dto';
-import { ProjectStatus, UserRole } from '../../generated/prisma';
+import { ProjectStatus, UserRole, AuditActionType } from '../../generated/prisma';
 import { validateStatusTransition, isProjectAcceptingDonations } from './utils/status-transition.validator';
+import { EmailService } from '../users/email.service';
 
 @Injectable()
-export class ProjectsService {
+export class P
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  
   constructor(private readonly prisma: PrismaService) {}
 
   async create(creatorId: string, dto: CreateProjectDto) {
@@ -171,6 +175,128 @@ export class ProjectsService {
 
     return this.prisma.projectStatusHistory.findMany({
       where: { projectId },
+
+  async approveProject(projectId: string, adminId: string, remarks?: string) {
+    const project = await this.findOne(projectId);
+
+    // Validate status transition (PENDING -> APPROVED)
+    if (project.status !== ProjectStatus.PENDING) {
+      throw new BadRequestException(
+        `Cannot approve project in ${project.status} status. Project must be in PENDING status`,
+      );
+    }
+
+    // Update project status atomically
+    const updatedProject = await this.prisma.project.update({
+      where: { id: projectId },
+      data: {
+        status: ProjectStatus.APPROVED,
+        approvedAt: new Date(),
+        updatedAt: new Date(),
+      },
+      include: { creator: { select: { id: true, email: true, firstName: true, lastName: true } } },
+    });
+
+    // Record status history
+    await this.prisma.projectStatusHistory.create({
+      data: {
+        projectId,
+        oldStatus: project.status,
+        newStatus: ProjectStatus.APPROVED,
+        reason: 'Project approved by admin',
+      },
+    });
+
+    // Record audit log
+    await this.createAuditLog(
+      adminId,
+      AuditActionType.PROJECT_APPROVED,
+      projectId,
+      remarks || 'Project approved',
+    );
+
+    // Send email notification to creator
+    await this.emailService.sendProjectApprovalEmail(
+      updatedProject.creator.email,
+      updatedProject.title,
+      remarks,
+    );
+
+    return updatedProject;
+  }
+
+  async rejectProject(projectId: string, adminId: string, rejectionReason: string) {
+    const project = await this.findOne(projectId);
+
+    // Validate status transition (PENDING -> REJECTED)
+    if (project.status !== ProjectStatus.PENDING) {
+      throw new BadRequestException(
+        `Cannot reject project in ${project.status} status. Project must be in PENDING status`,
+      );
+    }
+
+    // Update project status atomically
+    const updatedProject = await this.prisma.project.update({
+      where: { id: projectId },
+      data: {
+        status: ProjectStatus.REJECTED,
+        rejectedAt: new Date(),
+        rejectionReason,
+        updatedAt: new Date(),
+      },
+      include: { creator: { select: { id: true, email: true, firstName: true, lastName: true } } },
+    });
+
+    // Record status history
+    await this.prisma.projectStatusHistory.create({
+      data: {
+        projectId,
+        oldStatus: project.status,
+        newStatus: ProjectStatus.REJECTED,
+        reason: rejectionReason,
+      },
+    });
+
+    // Record audit log
+    await this.createAuditLog(
+      adminId,
+      AuditActionType.PROJECT_REJECTED,
+      projectId,
+      rejectionReason,
+    );
+
+    // Send email notification to creator
+    await this.emailService.sendProjectRejectionEmail(
+      updatedProject.creator.email,
+      updatedProject.title,
+      rejectionReason,
+    );
+
+    return updatedProject;
+  }
+
+  private async createAuditLog(
+    adminId: string,
+    action: AuditActionType,
+    projectId?: string,
+    remarks?: string,
+    userId?: string,
+  ) {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          action,
+          adminId,
+          projectId,
+          userId,
+          remarks,
+        },
+      });
+    } catch (error) {
+      // Log audit failure but don't fail the main operation
+      console.error('Failed to create audit log:', error);
+    }
+  }
       orderBy: { createdAt: 'desc' },
     });
   }
