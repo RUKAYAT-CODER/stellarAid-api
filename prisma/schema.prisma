@@ -62,6 +62,7 @@ enum AuditActionType {
   USER_ROLE_UPDATED
   USER_KYC_STATUS_UPDATED
   USER_DELETED
+  DONATION_CREATED
 }
 
 // ── Models ────────────────────────────────────────────────────────────────────
@@ -92,6 +93,7 @@ model User {
   emailTokens      EmailToken[]
   projects         Project[]
   auditLogs        AuditLog[]
+  donations        Donation[]
 
   @@map("users")
   @@index([role])
@@ -146,6 +148,7 @@ model Project {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   statusHistory   ProjectStatusHistory[]
+  donations       Donation[]
 
   @@map("projects")
   @@index([creatorId])
@@ -153,8 +156,40 @@ model Project {
   @@index([category])
 }
 
+model Donation {
+  id             String   @id @default(uuid())
+  amount         Decimal  @db.Decimal(18, 7)
+  assetCode      String?  // e.g., 'XLM', 'USD', etc.
+  assetIssuer    String?  // for non-native assets
+  transactionHash String? @unique
+  status         String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id])
+  donorId        String
+  donor          User     @relation(fields: [donorId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("donations")
+  @@index([projectId])
+  @@index([donorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model ProjectStatusHistory {
- 
+  id        String        @id @default(uuid())
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  oldStatus ProjectStatus
+  newStatus ProjectStatus
+  reason    String?
+  createdAt DateTime      @default(now())
+
+  @@map("project_status_history")
+  @@index([projectId])
+  @@index([createdAt])
+}
 
 model AuditLog {
   id        String            @id @default(uuid())
@@ -172,16 +207,5 @@ model AuditLog {
   @@index([projectId])
   @@index([userId])
   @@index([action])
-  @@index([createdAt])
-} id        String        @id @default(uuid())
-  projectId String
-  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  oldStatus ProjectStatus
-  newStatus ProjectStatus
-  reason    String?
-  createdAt DateTime      @default(now())
-
-  @@map("project_status_history")
-  @@index([projectId])
   @@index([createdAt])
 }
