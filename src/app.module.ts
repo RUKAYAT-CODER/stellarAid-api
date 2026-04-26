@@ -12,6 +12,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { JwtAuthGuard, RolesGuard } from './modules/auth';
+import { DonationsModule } from './donations/donations.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { JwtAuthGuard, RolesGuard } from './modules/auth';
     AdminModule,
     ProjectsModule,
     WinstonModule.forRoot(winstonConfig),
+    DonationsModule,
   ],
   controllers: [AppController],
   providers: [
