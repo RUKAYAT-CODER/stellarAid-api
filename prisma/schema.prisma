@@ -53,6 +53,14 @@ enum ProjectCategory {
   OTHER
 }
 
+enum AssetType {
+  STELLAR
+  USDC
+  ETH
+  BTC
+  OTHER
+}
+
 enum AuditActionType {
   PROJECT_APPROVED
   PROJECT_REJECTED
@@ -91,6 +99,7 @@ model User {
   refreshTokens    RefreshToken[]
   emailTokens      EmailToken[]
   projects         Project[]
+  donations        Donation[]
   auditLogs        AuditLog[]
 
   @@map("users")
@@ -146,12 +155,32 @@ model Project {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
   statusHistory   ProjectStatusHistory[]
+  donations       Donation[]
   images          ProjectImage[]
 
   @@map("projects")
   @@index([creatorId])
   @@index([status])
   @@index([category])
+}
+
+model Donation {
+  id              String    @id @default(uuid())
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id])
+  donorId         String
+  donor           User      @relation(fields: [donorId], references: [id])
+  amount          Decimal   @db.Decimal(18, 7)
+  assetType       AssetType
+  transactionHash String    @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("donations")
+  @@index([transactionHash])
+  @@index([projectId])
+  @@index([donorId])
+  @@index([createdAt])
 }
 
 model ProjectStatusHistory {
