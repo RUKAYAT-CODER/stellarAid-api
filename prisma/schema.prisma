@@ -70,6 +70,7 @@ enum AuditActionType {
   USER_ROLE_UPDATED
   USER_KYC_STATUS_UPDATED
   USER_DELETED
+  DONATION_CREATED
 }
 
 // ── Models ────────────────────────────────────────────────────────────────────
@@ -101,6 +102,7 @@ model User {
   projects         Project[]
   donations        Donation[]
   auditLogs        AuditLog[]
+  donations        Donation[]
 
   @@map("users")
   @@index([role])
@@ -165,6 +167,23 @@ model Project {
 }
 
 model Donation {
+  id             String   @id @default(uuid())
+  amount         Decimal  @db.Decimal(18, 7)
+  assetCode      String?  // e.g., 'XLM', 'USD', etc.
+  assetIssuer    String?  // for non-native assets
+  transactionHash String? @unique
+  status         String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id])
+  donorId        String
+  donor          User     @relation(fields: [donorId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("donations")
+  @@index([projectId])
+  @@index([donorId])
+  @@index([status])
   id              String    @id @default(uuid())
   projectId       String
   project         Project   @relation(fields: [projectId], references: [id])
