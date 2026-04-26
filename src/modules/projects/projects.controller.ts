@@ -20,6 +20,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { PauseProjectDto } from './dto/pause-project.dto';
 import { ResumeProjectDto } from './dto/resume-project.dto';
 import { CompleteProjectDto } from './dto/complete-project.dto';
+import { SearchProjectsDto } from './dto/search-projects.dto';
 import { UploadImageDto, ImageUploadResponseDto } from './dto/upload-image.dto';
 import { GetProjectAnalyticsDto, ProjectAnalyticsResponseDto } from './dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -45,8 +46,13 @@ export class ProjectsController {
   }
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  findAll(@Query() searchDto?: SearchProjectsDto) {
+    return this.projectsService.findAll(searchDto);
+  }
+
+  @Get('search/suggestions')
+  async getSearchSuggestions(@Query('q') query: string, @Query('limit') limit?: number) {
+    return this.projectsService.getSearchSuggestions(query, limit ? Number(limit) : 10);
   }
 
   @Get(':id')
