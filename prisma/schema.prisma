@@ -176,14 +176,9 @@ model Project {
 }
 
 model Donation {
-  id             String   @id @default(uuid())
-  amount         Decimal  @db.Decimal(18, 7)
-  assetCode      String?  // e.g., 'XLM', 'USD', etc.
-  assetIssuer    String?  // for non-native assets
-  transactionHash String? @unique
-  status         String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  id             String    @id @default(uuid())
   projectId      String
-  project        Project  @relation(fields: [projectId], references: [id])
+  project        Project   @relation(fields: [projectId], references: [id])
   donorId        String
   donor          User     @relation(fields: [donorId], references: [id])
   createdAt      DateTime @default(now())
@@ -193,8 +188,20 @@ model Donation {
   @@index([projectId])
   @@index([donorId])
   @@index([status])
+  donor          User      @relation(fields: [donorId], references: [id])
+  amount         Decimal   @db.Decimal(18, 7)
+  assetType      AssetType
+  assetCode      String?   // e.g., 'XLM', 'USD', etc.
+  assetIssuer    String?   // for non-native assets
+  transactionHash String   @unique
+  status         String    @default("PENDING") // PENDING, COMPLETED, FAILED
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("donations")
   @@index([transactionHash])
   @@index([createdAt])
+  @@index([status])
 }
 
 model ProjectStatusHistory {
